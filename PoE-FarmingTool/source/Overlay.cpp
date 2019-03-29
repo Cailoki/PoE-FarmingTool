@@ -8,8 +8,8 @@ HWND OverlayWindow::profitWnd = NULL;
 HWND OverlayWindow::spentLastWnd = NULL;
 HWND OverlayWindow::profitLastWnd = NULL;
 HWND OverlayWindow::disableWnd = NULL;
-float OverlayWindow::xPos;
-float OverlayWindow::yPos;
+float OverlayWindow::xPos = 0;
+float OverlayWindow::yPos = 0;
 
 void OverlayWindow::SetPosition(float x, float y) {
 	xPos = x;

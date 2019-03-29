@@ -31,32 +31,30 @@ HFONT hFontTitle = CreateFont(18, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT
 
 void MainWindow::ShowLabels(HDC hdc) {
 	//1. Row
-	TextOut(hdc, 20, 40, L"Map:", sizeof(L"Map:"));
-	TextOut(hdc, 255, 40, L"League:", wcslen(L"League:"));
+	TextOut(hdc, 20, 40, L"Map:", static_cast<int>(wcslen(L"Map:")));
+	TextOut(hdc, 255, 40, L"League:", static_cast<int>(wcslen(L"League:")));
 	//2. Row
-	TextOut(hdc, 20, 70, L"Map price:", wcslen(L"Map price:"));
-	TextOut(hdc, 155, 70, L"IIQ:", wcslen(L"IIQ:"));
-	TextOut(hdc, 245, 70, L"CS:", wcslen(L"CS:"));
+	TextOut(hdc, 20, 70, L"Map price:", static_cast<int>(wcslen(L"Map price:")));
+	TextOut(hdc, 155, 70, L"IIQ:", static_cast<int>(wcslen(L"IIQ:")));
+	TextOut(hdc, 245, 70, L"CS:", static_cast<int>(wcslen(L"CS:")));
 	//3. Row
-	TextOut(hdc, 20, 100, L"Runs:", wcslen(L"Runs:"));
-	TextOut(hdc, 127, 100, L"Spent:", wcslen(L"Spent:"));
-	TextOut(hdc, 245, 100, L"Profit:", wcslen(L"Profit:"));
+	TextOut(hdc, 20, 100, L"Runs:", static_cast<int>(wcslen(L"Runs:")));
+	TextOut(hdc, 127, 100, L"Spent:", static_cast<int>(wcslen(L"Spent:")));
+	TextOut(hdc, 245, 100, L"Profit:", static_cast<int>(wcslen(L"Profit:")));
 	//4. Row
-	TextOut(hdc, 20, 130, L"Last run ------------>", wcslen(L"Last run ------------>"));
-	TextOut(hdc, 127, 130, L"Spent:", wcslen(L"Spent:"));
-	TextOut(hdc, 245, 130, L"Profit:", wcslen(L"Profit:"));
+	TextOut(hdc, 20, 130, L"Last run ------------>", static_cast<int>(wcslen(L"Last run ------------>")));
+	TextOut(hdc, 127, 130, L"Spent:", static_cast<int>(wcslen(L"Spent:")));
+	TextOut(hdc, 245, 130, L"Profit:", static_cast<int>(wcslen(L"Profit:")));
 	//5. Row
-	TextOut(hdc, 20, 160, L"Item moved:", wcslen(L"Item moved:"));
+	TextOut(hdc, 20, 160, L"Item moved:", static_cast<int>(wcslen(L"Item moved:")));
 	//6. Row
-	TextOut(hdc, 20, 190, L"Status:", wcslen(L"Status:"));
-	TextOut(hdc, 215, 190, L"Location:", wcslen(L"Location:"));
+	TextOut(hdc, 20, 190, L"Status:", static_cast<int>(wcslen(L"Status:")));
+	TextOut(hdc, 215, 190, L"Location:", static_cast<int>(wcslen(L"Location:")));
 	//7. Row
-	TextOut(hdc, 20, 220, L"History:", wcslen(L"History:"));
-	//8. Row
-	//TextOut(hdc, 360, 385, L"v 1.0.0", wcslen(L"v 1.0.0"));
+	TextOut(hdc, 20, 220, L"History:", static_cast<int>(wcslen(L"History:")));
 	//Title
 	SelectObject(hdc, hFontTitle);
-	TextOut(hdc, 140, 10, L"PoE - Farming Tool", wcslen(L"PoE - Farming Tool"));
+	TextOut(hdc, 140, 10, L"PoE - Farming Tool", static_cast<int>(wcslen(L"PoE - Farming Tool")));
 }
 
 void MainWindow::ShowUpdatingText(HWND hWnd) {
@@ -85,8 +83,8 @@ void MainWindow::ShowUpdatingText(HWND hWnd) {
 	//6. Row
 	itemStatusWnd = CreateWindow(L"Static", NULL, dwStyleText, 60, 190, 140, 20, hWnd, NULL, NULL, NULL);
 	locWnd = CreateWindow(L"Static", NULL, dwStyleText, 270, 190, 130, 20, hWnd, NULL, NULL, NULL);
-	//7. Row
-	historyWnd = CreateWindow(L"Static", NULL, WS_CHILD | WS_VISIBLE | ES_LEFT | WS_BORDER | SS_EDITCONTROL, 20, 240, 380, 120, hWnd, NULL, NULL, NULL);
+	//7. Row (Lisbox/History)
+	historyWnd = CreateWindow(L"Listbox", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL, 20, 240, 380, 120, hWnd, NULL, NULL, NULL);
 	//8. Row
 	patreonWnd = CreateWindow(L"Static", NULL, dwStyleImage, 20, 370, 32, 32, hWnd, NULL, NULL, NULL);
 	HBITMAP hImagePatreon = (HBITMAP)LoadImage(NULL, L"resources\\Patreon_Mark_Black.bmp", IMAGE_BITMAP, 32, 32, LR_LOADFROMFILE);

@@ -21,7 +21,4 @@ public:
 	static const int numberOfRateGroups = 7; //used for few for loops and progress bar steps
 };
 
-class Version {
-public:
-	void GetRepoData();
-};
+void GetRepoData();
