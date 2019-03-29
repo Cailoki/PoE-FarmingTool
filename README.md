@@ -1,7 +1,7 @@
-                                                     PoE-FarmingTool
+                                                     **PoE-FarmingTool**
 
 
-Forum - [Discord](https://discord.gg/D2m7Kpw) - [Patreon](https://www.patreon.com/cailoki) - [Video Guide](https://www.youtube.com/watch?v=_zZaTpxYMQg)
+[Forum](https://www.pathofexile.com/forum/view-thread/2472341) - [Discord](https://discord.gg/D2m7Kpw) - [Patreon](https://www.patreon.com/cailoki) - [Video Guide](https://www.youtube.com/watch?v=_zZaTpxYMQg) - [Screenshot](https://i.imgur.com/IpWfuCS.jpg)
 
 **NOTE:**\
 This is the first project I made while learning C++ programming language. For any tips, suggestions or issues you might have please let me know here or on Discord, I am willing to learn, improve myself and this little tool! ;)
@@ -42,4 +42,4 @@ On startup there will be a warning for missing currency rates and/or missing Cli
 -Make sure to play Path of Exile in English, if you're using a different language it probably won't work.\
 -At the beginning of the league prices are very volatile and incorrect, especially prices of currency (scrolls are not worth 1 Chaos Orb!)\
 -When moving a map to the map device, it's price will be added to profit, if that map is opened(entered) that price will be added to the spent value and subtracted from profit twice(to cancel first add as profit, and again to show loss of currency)\
--at the moment this tool and PoE-TradeMacro share Ctrl+C hotkey, moving items to the stash will show item info window =)
+-at the moment this tool and PoE-TradeMacro share Ctrl+C hotkey, moving items to the stash will show item info window

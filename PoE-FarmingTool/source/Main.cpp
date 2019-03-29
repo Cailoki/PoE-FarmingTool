@@ -13,7 +13,7 @@ HFONT hFont = CreateFont(15, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_
 const std::vector<std::string>magicMapPrefixes = { "Ceremonial","Antagonist's","Anarchic","Skeletal","Capricious","Slithering","Undead","Emanant","Feral","Demonic","Bipedal","Solar",
 "Lunar","Haunting","Feasting","Multifarious","Chaining","Otherworldly","Twinned","Splitting","Abhorrent","Unstoppable","Conflagrating","Unwavering","Armoured","Fecund","Savage",
 "Burning","Freezing","Shocking","Fleet","Punishing","Mirrored","Overlord's","Titan's","Hexwarded","Resistant","Impervious","Hexproof","Empowered" };
-const std::string version = "v1.0.0";
+const std::string version = "v1.0.1";
 
 //Convert to wchar_t template (used for the window text variables)
 template<class T>
@@ -77,7 +77,7 @@ private:
 class Settings {
 public:
 	void InitSettings();
-	void DrawSettings() const; //Draw settings on the window
+	const void DrawSettings() const; //Draw settings on the window
 	void SaveSettings();
 	const std::string& GetLogLocation() const { return clientLogLocation; }
 	void SetLogLocation(const std::string& value) { clientLogLocation = value; }
@@ -142,6 +142,8 @@ struct LastParsedMap {
 
 //Reset runs, spent and profit, convert to wchars and draw on the window
 void SessionData::ResetData() {
+	SendMessage(MainWindow::historyWnd, LB_RESETCONTENT, NULL, NULL); //Reset history window
+	isMapOpened = false; //Reset map status as if script was just started
 	runs = 0;
 	spent = 0;
 	profit = 0;
@@ -152,6 +154,8 @@ void SessionData::ResetData() {
 	convert_to_wchar_t(wProfit, profit);
 	convert_to_wchar_t(wLastProfit, lastProfit);
 	convert_to_wchar_t(wLastSpent, lastSpent);
+	SetWindowText(MainWindow::itemMovedWnd, L"");
+	SetWindowText(MainWindow::itemStatusWnd, L"");
 	DrawData();
 	SaveData();
 }
@@ -224,7 +228,6 @@ void SessionData::SaveData() {
 void SessionData::CalculateSpent(const std::string& type) {
 	float val = 0;
 	std::string message = "";
-	bool removeLast = false; //Remove last entry in history if last parsed item is map that was opened but calculated as profit
 	if (type == "CS") { //Cartographer's Sextant
 		//If rates were updated, recalculate average CS price and set status to false until next update
 		if (CurrencyInfo::currencyRatesUpdated) {
@@ -247,42 +250,59 @@ void SessionData::CalculateSpent(const std::string& type) {
 				profit -= (lastParsedMap.price + settings.GetMapPrice() + mapPriceExtra + spentCurrencyOnMap + settings.GetZanaModPrice());
 			}
 			spent += val;
-			lastSpent += val;
-			lastProfit -= val;
-			message = settings.GetMapName() + " used!";
+
+			//Display last run data in the history
+			lastProfit -= lastParsedMap.price;
+			std::string strSpent = std::to_string(lastSpent);
+			strSpent.erase(strSpent.size() - 4, strSpent.size());
+			std::string strProfit = std::to_string(lastProfit);
+			strProfit.erase(strProfit.size() - 4, strProfit.size());
+			DisplayHistory("Map finished! Spent: " + strSpent + " Profit: " + strProfit, true);
+			DisplayHistory("--------------------", false);
+
+			//Reset last run data
+			lastSpent = 0;
+			lastProfit = 0;
 		}
-		else { //First map opened after script startup
+		else {
 			if (settings.GetMapPrice() == 0) //Use online price
 				val = lastParsedMap.price + mapPriceExtra + spentCurrencyOnMap + settings.GetZanaModPrice();
 			else //Price set in settings
 				val = settings.GetMapPrice() + mapPriceExtra + spentCurrencyOnMap + settings.GetZanaModPrice();
-
 			spent += val;
 			profit -= val;
-			lastSpent += val;
-			lastProfit -= val;
-			message = settings.GetMapName() + " used!";
 		}
-		removeLast = true;
+		lastSpent += val;
+		lastProfit -= val;
+		message = settings.GetMapName() + " used!";
 	}
-	else {//any map
-		val = lastParsedMap.price + mapPriceExtra + spentCurrencyOnMap + settings.GetZanaModPrice(); //new spent value
+	else { //any map
+		val = lastParsedMap.price + mapPriceExtra + spentCurrencyOnMap + settings.GetZanaModPrice();//new spent value
 		spent += lastParsedMap.price + mapPriceExtra + spentCurrencyOnMap + settings.GetZanaModPrice(); //map opened, add spent value
 		//next line: "*2" because first ctrl+click will transfer map to the device, parse it and add as profit
 		//if opened, profit must be subtracted to cancel first action, then subtract again to calculate actual profit decrease 
 		if (isMapOpened) { //false on script startup
 			profit -= (lastParsedMap.price * 2 + mapPriceExtra + spentCurrencyOnMap + settings.GetZanaModPrice());
-			lastSpent += val;
-			lastProfit -= val;
-			message = type + " used!";
-			removeLast = true;
+
+			//Display last run data in the history
+			lastProfit -= lastParsedMap.price;
+			std::string strSpent = std::to_string(lastSpent);
+			strSpent.erase(strSpent.size() - 4, strSpent.size());
+			std::string strProfit = std::to_string(lastProfit);
+			strProfit.erase(strProfit.size() - 4, strProfit.size());
+			DisplayHistory("Map finished! Spent: " + strSpent + " Profit: " + strProfit, true);
+			DisplayHistory("--------------------", false);
+			
+			//Reset last run data
+			lastSpent = 0;
+			lastProfit = 0;
 		}
 		else {
 			profit -= val;
-			lastSpent += val;
-			lastProfit -= val;
-			message = type + " used!";
 		}
+		lastSpent += val;
+		lastProfit -= val;
+		message = type + " used!";
 	}
 	//Clear last parsed map
 	lastParsedMap.name = "";
@@ -300,7 +320,7 @@ void SessionData::CalculateSpent(const std::string& type) {
 	convert_to_wchar_t(w_status, status);
 	SetWindowText(MainWindow::itemStatusWnd, w_status); //Display value of spent currency
 	std::string hist = message + ' ' + status; //Message shown in history window
-	DisplayHistory(hist, removeLast);
+	DisplayHistory(hist, false);
 	DrawData();
 	SaveData();
 }
@@ -308,35 +328,17 @@ void SessionData::CalculateSpent(const std::string& type) {
 void SessionData::DisplayHistory(const std::string& data, const bool& removeLast) {
 	//If last parsed item was map which was opened, remove it's entry in the history
 	if (removeLast) {
-		if (history.size() > 0)
-			history.erase(history.end() - 1);
+		if (GetListBoxInfo(MainWindow::historyWnd) > 0)
+			SendMessage(MainWindow::historyWnd, LB_DELETESTRING, GetListBoxInfo(MainWindow::historyWnd)-1, NULL);
 	}
-	//On first startup vector is empty, stack data one after another until 7 "slots" fill up (slots are available space on the window)
-	if (history.size() < 7) {
-		history.push_back(data);
-		std::string data2;
-		for (int i = 0; i < static_cast<int>(history.size()); ++i)
-			data2 += history[i] + '\n';
-		wchar_t wData[1000];
-		char buf[500];
-		strncpy_s(buf, data2.c_str(), ARRAYSIZE(buf));
-		StringCbPrintfW(wData, 1000, L"%S", buf);
-		SetWindowText(MainWindow::historyWnd, wData);
-	}
-	//When vector fills up, remove first entry, add latest to the and and resize vector
-	else {
-		history.push_back(data);
-		history.erase(history.begin());
-		history.resize(7);
-		std::string data3;
-		for (int i = 0; i < static_cast<int>(history.size()); ++i)
-			data3 += history[i] + '\n';
-		wchar_t wData[1000];
-		char buf[1000];
-		strncpy_s(buf, data3.c_str(), ARRAYSIZE(buf));
-		StringCbPrintfW(wData, 1000, L"%S", buf);
-		SetWindowText(MainWindow::historyWnd, wData);
-	}
+	//Add an entry to the list
+	wchar_t wData[200];
+	convert_to_wchar_t(wData, data);
+	SendMessage(MainWindow::historyWnd, LB_ADDSTRING, NULL, (LPARAM)wData);
+	SendMessage(MainWindow::historyWnd, WM_VSCROLL, SB_BOTTOM, NULL);
+	//Keep number of items on the list at 100
+	if (GetListBoxInfo(MainWindow::historyWnd) > 200)
+		SendMessage(MainWindow::historyWnd, LB_DELETESTRING, 0, NULL);
 }
 
 //Display profit on the window and SAVE data
@@ -393,7 +395,7 @@ bool SessionData::CalculateProfit(const std::string& name, const int& stack, con
 					return true;
 				}
 				else {
-					mapAdditionsCurrent.isMap = false; //break chain (example: Map + Fragment + Scarab)
+					mapAdditionsCurrent.isMap = false;
 					lastParsedMap.name = "";
 					lastParsedMap.price = 0;
 					SetMapPriceExtra(0);
@@ -421,11 +423,7 @@ bool SessionData::CalculateProfit(const std::string& name, const int& stack, con
 //Read saved data -> Runs, Spent, Profit
 void SessionData::InitData() {
 	std::ifstream s_data_stream{ "data\\saved_data" };
-	if (!s_data_stream) { //Create file with default values
-		std::ofstream ost{ "data\\saved_data" };
-		ost << runs << '\n' << spent << '\n' << profit; //use defaults set in the class
-	}
-	else {
+	if (s_data_stream) {
 		s_data_stream >> runs >> spent >> profit;
 	}
 	s_data_stream.close();
@@ -475,8 +473,6 @@ void SessionData::UpdateLocation(const std::string& location, const std::string&
 				mainMap.ip = ip;
 				mainMap.portals = 5;
 				mainMap.inMap = true;
-				lastSpent = 0;
-				lastProfit = 0;
 				IncrementRuns();
 				CalculateSpent("Map");
 				isMapOpened = true; //false on script startup, used every run to block parsing until first map is opened/entered
@@ -574,8 +570,6 @@ void SessionData::UpdateLocation(const std::string& location, const std::string&
 				mainMap.ip = ip;
 				mainMap.portals = 5;
 				mainMap.inMap = true;
-				lastSpent = 0;
-				lastProfit = 0;
 				IncrementRuns();
 				CalculateSpent(location + " Map");
 				mapAdditionsCurrent.isMap = false; //Map opened, reset chain (map->fragment<->scarab), used for calculating spent currency(NOTE: Must be executed after CalculateSpent)
@@ -695,6 +689,7 @@ void ParseClipboard(std::istringstream& clipStream) {
 		name.erase(name.size() - 1); //remove '\r'
 		if (name[name.length() - 3] == 'M') { //is item Normal Map? (Example Map)
 			sessionData.SetSpentCurrencyOnMap(0); //Reset
+			sessionData.SetMapPriceExtra(0); //reset
 			std::stringstream removePrefix{ name };
 			std::string prefix, newName;
 			removePrefix >> prefix;
@@ -706,7 +701,6 @@ void ParseClipboard(std::istringstream& clipStream) {
 			}
 			else
 				sessionData.CalculateProfit(name, 1, CurrencyInfo::mapRates);
-			mapAdditionsCurrent.isMap = true; //parsed item is a map
 		}
 		else
 			sessionData.CalculateProfit(name, 1, CurrencyInfo::fragmentRates); //Fragments and scarabs, both are Rarity: Normal
@@ -737,6 +731,7 @@ void ParseClipboard(std::istringstream& clipStream) {
 			std::string mapName;
 			bool lookForPrefix = true;
 			sessionData.SetSpentCurrencyOnMap(0); //Reset
+			sessionData.SetMapPriceExtra(0); //reset
 			//Construct full map name without prefix (Slithering Bone Crypt Map -> Bone Crypt Map)
 			for (int i = 0; i < static_cast<int>(streamParts.size()); ++i) {
 				if (lookForPrefix) {
@@ -757,7 +752,6 @@ void ParseClipboard(std::istringstream& clipStream) {
 					mapName += streamParts[i] + ' '; //Construct full map name
 			}
 			mapName.erase(mapName.size() - 1); //remove trailing space
-			mapAdditionsCurrent.isMap = true; //Parsed item is a map
 			sessionData.CalculateProfit(mapName, 1, CurrencyInfo::mapRates);
 		}
 	}
@@ -795,6 +789,7 @@ void ParseClipboard(std::istringstream& clipStream) {
 		//Look for other mods, quality and corruption and add them to mapPriceExtra variable
 		if (isMap) {
 			sessionData.SetSpentCurrencyOnMap(0); //Reset
+			sessionData.SetMapPriceExtra(0); //reset
 			sessionData.SetSpentCurrencyOnMap(1 * CurrencyInfo::alchPrice); //add alchemy spent for rare map
 			while (clipStream >> word) {
 				if (word == "Quality:") {
@@ -820,7 +815,6 @@ void ParseClipboard(std::istringstream& clipStream) {
 		std::getline(clipStream, itemName); //get name
 		itemName.erase(itemName.size() - 1); //remove \r
 		if (itemName[itemName.length() - 3] == 'M') { //unidentified map
-			sessionData.SetSpentCurrencyOnMap(0); //Reset
 			std::stringstream line{ itemName };
 			std::string prefix;
 			line >> prefix;
@@ -832,6 +826,8 @@ void ParseClipboard(std::istringstream& clipStream) {
 			}
 			for (int i = 0; i < mapData.uniqueMaps.size(); ++i)
 				if (itemName == mapData.uniqueMaps[i].base) {
+					sessionData.SetSpentCurrencyOnMap(0); //Reset
+					sessionData.SetMapPriceExtra(0); //reset
 					sessionData.CalculateProfit(mapData.uniqueMaps[i].name, 1, CurrencyInfo::uniqueMapRates);
 					break;
 				}
@@ -841,6 +837,7 @@ void ParseClipboard(std::istringstream& clipStream) {
 			//itemBase.erase(itemBase.size() - 1); //remove \r
 			if (itemBase[itemBase.length() - 4] == 'M') { //identified map (-4 if \\r is not removed)
 				sessionData.SetSpentCurrencyOnMap(0); //Reset
+				sessionData.SetMapPriceExtra(0); //reset
 				sessionData.CalculateProfit(itemName, 1, CurrencyInfo::uniqueMapRates); //pass item name not base
 			}
 		}
@@ -915,17 +912,15 @@ bool CALLBACK SetFont(HWND child, LPARAM font) {
 }
 
 void CheckVersion() {
-	std::thread getRep(&Version::GetRepoData, Version());
-	getRep.detach();
-	Sleep(3000);
+	GetRepoData();
 	std::ifstream dataIn{ "data\\github_raw" };
 	std::string keyword, ver;
 	while (dataIn >> keyword) {
-		if (keyword == "\"tag_name\":") {
+		if (keyword == "\"tag_name\":") { //Example - "tag_name": "v1.0.0",
 			dataIn >> ver;
 			ver.erase(ver.begin());
 			ver.erase(ver.end() - 2, ver.end());
-			if (ver != version)
+			if (ver != version) //Version is a global variable
 				ShowWindow(MainWindow::updateButton, SW_SHOW);
 			break;
 		}
@@ -1287,7 +1282,7 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_ HINSTANCE, _In_ LPSTR, _In_ 
 	OverlayWindow::RegisterOverlayClass();
 
 	RECT wr = { 0, 0, 420, 420 }; //exact client area
-	AdjustWindowRect(&wr, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, TRUE); //calculate window size out of clien area and other styles using title/menu bar
+	AdjustWindowRect(&wr, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, TRUE); //calculate window size out of the client area and other styles using title/menu bar
 	CreateWindowW(L"DesktopApp", L"PoE Farming Tool", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT, wr.right - wr.left, wr.bottom - wr.top, NULL, NULL, hInstance, NULL);
 
 	//initialize data, settings, currency, log parser and mouse hook
@@ -1313,26 +1308,16 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_ HINSTANCE, _In_ LPSTR, _In_ 
 //Read saved settings -> Map, IIQ, Sextant combination, league, coordinates...
 void Settings::InitSettings() {
 	std::ifstream sSettingsStream{ "data\\saved_settings" };
-	if (!sSettingsStream) {
-		std::ofstream ost{ "data\\saved_settings" };
-		//mapname, iiq, cs, mapprice, league, mapFarmingType(true/false), x coord, y coord(overlay), zanaModPrice, Client.txt location
-		ost << mapName << '\n' << iiq << '\n' << cs << '\n' << mapPrice << '\n' << league << '\n' << "false" << '\n' << "0.00" << '\n' << "0.00"
-			<< '\n' << zanaModPrice << '\n' << clientLogLocation;
-	}
-	else {
+	if (sSettingsStream) {
+		//mapname, iiq, cs, mapPrice, league, mapFarmingType(true/false), x coord(overlay), y coord(overlay), zanaModPrice, clientLogLocation
 		std::getline(sSettingsStream, mapName);
-		float xP, yP; //Overlay coordinates
 		sSettingsStream >> iiq >> cs >> mapPrice;
 		sSettingsStream.ignore(); //Ignore newline character \n
 		std::getline(sSettingsStream, league);
+		float xP, yP; //Overlay coordinates
 		sSettingsStream >> mapFarmingType >> xP >> yP >> zanaModPrice;
 		sSettingsStream.ignore(); //Ignore newline character \n
 		getline(sSettingsStream, clientLogLocation);
-		//Set overlay coordinates withing desktop resolution
-		if (xP < 0 || xP > 0.99)
-			xP = 0.00;
-		if (yP < 0 || yP > 0.99)
-			yP = 0.00;
 		//Initiate overlay position
 		OverlayWindow::SetPosition(xP, yP);
 		//Initiate general farming
@@ -1362,13 +1347,13 @@ void Settings::InitSettings() {
 
 //Save setting to a file
 void Settings::SaveSettings() {
-	//mapname, iiq, cs, mapprice, league, mapFarmingType(true/false), x coord, y coord(overlay), zanaModPrice
+	//mapname, iiq, cs, mapPrice, league, mapFarmingType(true/false), x coord(overlay), y coord(overlay), zanaModPrice, clientLogLocation
 	std::ofstream ost{ "data\\saved_settings" };
 	ost << mapName << '\n' << iiq << '\n' << cs << '\n' << mapPrice << '\n' << league << '\n' << mapFarmingType << '\n' << OverlayWindow::GetXPos() << '\n' << OverlayWindow::GetYPos() << '\n' << zanaModPrice << '\n' << clientLogLocation;
 }
 
 //Draw values after init or on every paint call
-void Settings::DrawSettings() const {
+const void Settings::DrawSettings() const {
 	SetWindowText(MainWindow::mapNameWnd, wMap);
 	SetWindowText(MainWindow::mapPriceWnd, wMapPrice);
 	SetWindowText(MainWindow::IIQWnd, wIIQ);

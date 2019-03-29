@@ -138,7 +138,7 @@ void DialogWindow::OpenTipsDialog(HWND hWnd) {
 	GetWindowRect(hWnd, &rect);
 	HWND hDlg = CreateWindowEx(NULL, L"myDialogClass", L"Tips", WS_BORDER | WS_VISIBLE | WS_OVERLAPPEDWINDOW, rect.left + 25, rect.top + 25, 300, 200, NULL, NULL, NULL, NULL);
 	CreateWindow(L"Static", L"Tips", WS_VISIBLE | WS_CHILD | SS_CENTER, 40, 5, 200, 150, hDlg, NULL, NULL, NULL);
-	CreateWindow(L"Static", L"Shortcuts:\nCtrl+LMB - Parse items\nCtrl+RMB - Disable/Enable item parsing", WS_VISIBLE | WS_CHILD, 20, 25, 250, 80, hDlg, NULL, NULL, NULL);
+	CreateWindow(L"Static", L"Shortcuts:\n-Ctrl+LMB - Parse items\n-Ctrl+RMB - Disable/Enable item parsing\n-In the map device always put in map first, then sacrifice and/or scarab.", WS_VISIBLE | WS_CHILD, 20, 25, 250, 80, hDlg, NULL, NULL, NULL);
 }
 
 void DialogWindow::OpenAboutDialog(HWND hWnd) {
@@ -149,7 +149,7 @@ void DialogWindow::OpenAboutDialog(HWND hWnd) {
 	CreateWindow(L"Static", L"Author: Cailoki", WS_VISIBLE | WS_CHILD, 20, 60, 200, 150, hDlg, NULL, NULL, NULL);
 	CreateWindow(L"Static", L"Home page: github.com/Cailoki", WS_VISIBLE | WS_CHILD, 20, 80, 300, 150, hDlg, NULL, NULL, NULL);
 	CreateWindow(L"Static", L"License: GNU GPL v3.0", WS_VISIBLE | WS_CHILD, 20, 100, 200, 150, hDlg, NULL, NULL, NULL);
-	CreateWindow(L"Static", L"Version: 1.0.0", WS_VISIBLE | WS_CHILD, 20, 120, 200, 150, hDlg, NULL, NULL, NULL);
+	CreateWindow(L"Static", L"Version: 1.0.1", WS_VISIBLE | WS_CHILD, 20, 120, 200, 150, hDlg, NULL, NULL, NULL);
 }
 
 void DialogWindow::OpenSetLogLocation() {
