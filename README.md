@@ -1,7 +1,7 @@
                                                      **PoE-FarmingTool**
 
 
-[Forum](https://www.pathofexile.com/forum/view-thread/2472341) - [Discord](https://discord.gg/D2m7Kpw) - [Patreon](https://www.patreon.com/cailoki) - [Video Guide](https://www.youtube.com/watch?v=_zZaTpxYMQg) - [Screenshot](https://i.imgur.com/IpWfuCS.jpg)
+[Forum](https://www.pathofexile.com/forum/view-thread/2472341) - [Discord](https://discord.gg/D2m7Kpw) - [Patreon](https://www.patreon.com/cailoki) - [Video Guide](https://www.youtube.com/watch?v=GPGDLe2C2QE) - [Screenshot](https://i.imgur.com/IpWfuCS.jpg)
 
 **NOTE:**\
 This is the first project I made while learning C++ programming language. For any tips, suggestions or issues you might have please let me know here or on Discord, I am willing to learn, improve myself and this little tool! ;)
