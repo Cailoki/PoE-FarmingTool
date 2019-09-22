@@ -82,7 +82,6 @@ void OnButtonClicked(HWND hWnd, LPARAM lParam) {
 		ShellExecute(NULL, L"open", L"https://discord.gg/D2m7Kpw", NULL, NULL, SW_SHOWNORMAL);
 	else if (MainWindow::newVerAvailableButton == (HWND)lParam)
 		ShellExecute(NULL, L"open", L"https://github.com/Cailoki/PoE-FarmingTool/releases", NULL, NULL, SW_SHOWNORMAL);
-
 	//Overlay
 	else if (MainWindow::overlayButton == (HWND)lParam)
 		if (MainWindow::overlayOn) {
