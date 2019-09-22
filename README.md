@@ -1,3 +1,4 @@
+
 <center> <h2>PoE-FarmingTool</h2> </center>
 
 
@@ -20,10 +21,10 @@ On startup, there will be a warning for missing currency rates and/or missing Cl
 1. Make sure the league is set to the one you want to use the tool in, Settings -> League. (won't work for standard leagues)
 2. Navigate to currency menu and click update (this will pull prices locally and make parsing faster, be sure to update rates every few hours if you are playing a lot :)
 3. Go to the settings -> map:\
-  -for farming specific maps put in map name, for example (Toxic Sewer), all loot outside that map will be ignored
-  -map price: if set to 0, use online price, else use manually set price
-  -add Zana mod price if used
-  -general: any opened map will be displayed as spent and all loot added to profit
+  -for farming specific maps put in map name, for example (Toxic Sewer), all loot outside that map will be ignored\
+  -map price: if set to 0, use online price, else use manually set price\
+  -add Zana mod price if used\
+  -general: any opened map will be displayed as spent and all loot added to profit\
   -ignore trash: values of 1c or below will not be added to profit, like trash divination cards, low tier maps...
 4. IIQ is unused at the moment but can be edited and displayed on the main window just as info
 5. Sextants: in format 0-0-0 (Apprentice-Journeyman-Master), the average price will be calculated and on each sextant use that average will be added to the spent value
@@ -33,13 +34,13 @@ On startup, there will be a warning for missing currency rates and/or missing Cl
 9. +Spent button adds set value to spent
 
 **Note:**\
-10. Always transfer items to stash and/or map device using Ctrl+LMB otherwise tool won't get their values
-11. Holding down Ctrl and clicking LMB(Left Mouse Button) will trigger parsing of an item below the cursor, this hotkey also transfers items between the stash and the inventory so you don't have to drag and drop loot.
-12. Holding down CTRL and clicking RMB(Right Mouse Button) will disable the tool and play little notification beep, all parsing is disabled from that point (useful when moving between hideouts, farming in friends maps, doing lab or temple)
+10. Always transfer items to stash and/or map device using Ctrl+LMB otherwise tool won't get their values\
+11. Holding down Ctrl and clicking LMB(Left Mouse Button) will trigger parsing of an item below the cursor, this hotkey also transfers items between the stash and the inventory so you don't have to drag and drop loot.\
+12. Holding down CTRL and clicking RMB(Right Mouse Button) will disable the tool and play little notification beep, all parsing is disabled from that point (useful when moving between hideouts, farming in friends maps, doing lab or temple)\
 13. Always put Map first in the map device and then fragments/scarabs, anything else will break the chain and won't calculate exact numbers
  
 **Additional Notes:**\
--Make sure to play Path of Exile in English, if you're using a different language it probably won't work.
--At the beginning of the league, prices are very volatile and incorrect, especially prices of currency (scrolls are not worth 1 Chaos Orb!)
--When moving a map to the map device, it's price will be added to profit, if that map is opened (entered), price will be added to the spent value and subtracted from profit twice(to cancel first add as profit, and again to show loss of currency)
+-Make sure to play Path of Exile in English, if you're using a different language it probably won't work.\
+-At the beginning of the league, prices are very volatile and incorrect, especially prices of currency (scrolls are not worth 1 Chaos Orb!)\
+-When moving a map to the map device, it's price will be added to profit, if that map is opened (entered), price will be added to the spent value and subtracted from profit twice(to cancel first add as profit, and again to show loss of currency)\
 -At the moment this tool and PoE-TradeMacro share Ctrl+C hotkey (or rather clipboard data), moving items to the stash will show item info window
