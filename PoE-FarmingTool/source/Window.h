@@ -1,24 +1,22 @@
 #pragma once
 
-#define SETTINGS_MENU_MAP 1
-#define SETTINGS_MENU_IIQ 2
-#define FILE_MENU_EXIT 3
-#define SETTINGS_MENU_CS 4
-#define CURRENCY_MENU_UPDATE 5
-#define SETTINGS_MENU_LEAGUE 6
-#define SETTINGS_MENU_OVERLAY 7
-#define FILE_MENU_RESET 19
-#define HELP_ABOUT 20
-#define HELP_TIPS 21
-
 class MainWindow {
 public:
-	static void ShowLabels(HDC);
-	static void AddMenus(HWND);
-	static void ShowUpdatingText(HWND);
-	static bool overlayOn;
+	//Main window elements
+	static void ShowLabels(const HDC&);
+	static void AddMenus(const HWND&);
+	static void ShowUpdatingText(const HWND&);
+	//Elements control
+	static void RedrawData();
+	static void RedrawSettings();
+	static void DrawLocation(const std::wstring& loc);
+	//History control
+	static void AddToHistory(const std::wstring& data);
+	static void CleanHistory(const int& count);
+	//Fields
 	static HMENU hMenu;
+	static bool overlayOn;
 	static HWND mapNameWnd, runsWnd, spentWnd, profitWnd, itemMovedWnd, itemStatusWnd, locWnd,
-				IIQWnd, CSWnd, mapPriceWnd, leagueWnd, patreonWnd, gitWnd, dicordWnd, overlayButton,
-				lastSpentWnd, lastProfitWnd, historyWnd, profitButton, spentButton, updateButton;
+		IIQWnd, CSWnd, mapPriceWnd, leagueWnd, patreonWnd, gitWnd, discordWnd, overlayButton,
+		lastSpentWnd, lastProfitWnd, historyWnd, profitButton, spentButton, newVerAvailableButton;
 };

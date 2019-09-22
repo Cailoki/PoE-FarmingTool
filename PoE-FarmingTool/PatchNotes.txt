@@ -1,4 +1,16 @@
+v1.1.0
+==========
+-updates for Blight league
+-updates for previous Legion league
+-added ignore trash option
+-added history changes to the overlay window
+-code/logic redesign
+
 v1.0.1
 ==========
--updated the history window to hold up to 200 items
+-updated history window to hold up to 200 items
 -minor code changes
+
+v1.0.0
+==========
+-initial release
