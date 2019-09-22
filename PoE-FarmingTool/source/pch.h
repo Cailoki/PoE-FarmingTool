@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <strsafe.h>
 #include <fstream>
 #include <vector>
 #include <sstream>

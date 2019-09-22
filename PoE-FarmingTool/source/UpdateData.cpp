@@ -2,385 +2,390 @@
 #include "UpdateData.h"
 #include "DialogWindow.h"
 #include <WinInet.h>
+#include "Utilities.h"
+#include "Calculator.h"
+#include "Settings.h"
 
-float CurrencyInfo::chiselPrice = 0, CurrencyInfo::alchPrice = 0, CurrencyInfo::vaalPrice = 0;
-bool CurrencyInfo::validHTML = true;
+//Declaration of CurrencyInfo class static members
+float CurrencyInfo::chiselPrice = 0, CurrencyInfo::alchPrice = 0, CurrencyInfo::vaalPrice = 0, CurrencyInfo::csPrice = 0;
 bool CurrencyInfo::showMessage = true;
-bool CurrencyInfo::currencyRatesLoaded = false;
-bool CurrencyInfo::currencyRatesUpdated = false;
-std::vector<CurrencyInfo::RatesStruct>CurrencyInfo::currencyRates = {}; 
+std::vector<CurrencyInfo::RatesStruct>CurrencyInfo::currencyRates = {};
 std::vector<CurrencyInfo::RatesStruct>CurrencyInfo::divinationCardRates = {};
 std::vector<CurrencyInfo::RatesStruct>CurrencyInfo::mapRates = {};
 std::vector<CurrencyInfo::RatesStruct>CurrencyInfo::uniqueMapRates = {};
 std::vector<CurrencyInfo::RatesStruct>CurrencyInfo::fragmentRates = {};
-std::vector<CurrencyInfo::LinksStruct>CurrencyInfo::links = //filename, link, estimated reseved space for vector
-{ 
-	CurrencyInfo::LinksStruct{"data\\currency_rates", "https://poe.ninja/api/Data/GetCurrencyOverview?league=", 160},
-	CurrencyInfo::LinksStruct{"data\\divination_card_rates", "https://poe.ninja/api/Data/GetDivinationCardsOverview?league=", 250},
-	CurrencyInfo::LinksStruct{"data\\map_rates", "https://poe.ninja/api/Data/GetMapOverview?league=", 350}, 
-	CurrencyInfo::LinksStruct{"data\\unique_map_rates", "https://poe.ninja/api/Data/GetUniqueMapOverview?league=", 25},
-	CurrencyInfo::LinksStruct{"data\\fragment_rates", "https://poe.ninja/api/Data/GetFragmentOverview?league=", 80},
-	CurrencyInfo::LinksStruct{"data\\essence_rates", "https://poe.ninja/api/Data/GetEssenceOverview?league=", 120},
-	CurrencyInfo::LinksStruct{"data\\scarab_rates", "scarab", 40}
-};
+std::vector<CurrencyInfo::RatesStruct>CurrencyInfo::scarabRates = {};
+std::vector<CurrencyInfo::RatesStruct>CurrencyInfo::essenceRates = {};
+std::vector<CurrencyInfo::RatesStruct>CurrencyInfo::fossilRates = {};
+std::vector<CurrencyInfo::RatesStruct>CurrencyInfo::resonatorRates = {};
+std::vector<CurrencyInfo::RatesStruct>CurrencyInfo::incubatorRates = {};
+std::vector<CurrencyInfo::RatesStruct>CurrencyInfo::prophecyRates = {};
+std::vector<CurrencyInfo::RatesStruct>CurrencyInfo::oilRates = {};
 
-//used for reading saved rates from a file
-bool CurrencyInfo::ReadRates(std::vector<CurrencyInfo::RatesStruct>& rates, const int& x) {
-	std::string name, line;
-	std::ifstream data{ CurrencyInfo::links[x].fileName };
+//Read saved rates from a file and populate working vector
+bool CurrencyInfo::ReadRates(const std::wstring& sourceFile, std::vector<CurrencyInfo::RatesStruct>& destinationVector) {
+	std::wstring name, line;
+	std::wifstream data{ sourceFile };
 
 	if (!data) {
 		return false;
 	}
 	else {
 		float num;
-		rates.reserve(CurrencyInfo::links[x].reserveSize);
+		destinationVector.reserve(400);
+
 		while (std::getline(data, line)) {
-			std::stringstream ss(line);
+			std::wstringstream ss(line);
 			ss >> num;
 			std::getline(ss, name);
 			name.erase(name.begin());
-			rates.push_back(CurrencyInfo::RatesStruct{ name, num });
-			if (x == 0) { //Currency data
-				if (name == "Vaal Orb")
-					CurrencyInfo::vaalPrice = num;
-				else if (name == "Orb of Alchemy")
-					CurrencyInfo::alchPrice = num;
-				else if (name == "Cartographer's Chisel")
-					CurrencyInfo::chiselPrice = num;
-			}
+			destinationVector.emplace_back(CurrencyInfo::RatesStruct{ name, num });
 		}
+		destinationVector.shrink_to_fit();
 	}
 	return true;
 }
 
-void GetHtmlData(const std::string& league, const std::string& link) {
-	LPCWSTR userAgent = L"Mozilla / 5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko / 20100101 Firefox / 63.0";
-	LPCWSTR header = L"Accept-Encoding: gzip, deflate";
+//Parse raw data with "currencyTypeName" keyword
+void ParseCurrencyData(const std::wstring& input, std::vector<CurrencyInfo::RatesStruct>& destination) {
+	std::wstring word;
+	std::vector<CurrencyInfo::RatesStruct> temp;
+	temp.reserve(400); //Reserving space should prevent unnecessary copying when adding data to vector
+	std::wifstream dataIn{ input };
 
-	HINTERNET connect = InternetOpen(userAgent, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, NULL);
-	if (!connect) {
-		MessageBox(NULL, L"Connection failed or syntax error!", L"Error", MB_OK);
-	}
+	if (!dataIn)
+		MessageBox(NULL, L"ParseCurrencyData failed, input not found!", L"Error", NULL);
 
-	BOOL isDecoding = true;
-	BOOL decoding = InternetSetOption(connect, INTERNET_OPTION_HTTP_DECODING, &isDecoding, sizeof(isDecoding));
-	if (!decoding) {
-		MessageBox(NULL, L"Connection not decoded!", L"Error", MB_OK);
-	}
+	//Example - "currencyTypeName Mirror of Kalandra pay"
+	while (dataIn >> word) {
+		if (word == L"currencyTypeName") {
+		currencyFound:
+			std::wstring name;
 
-	std::string leagueURL ="";
-	if (link == "scarab") {
-		leagueURL = "https://poe.ninja/api/data/itemoverview?league=" + league + "&type=Scarab";
-	}
-	else
-		leagueURL = link + league;
-	std::wstring tempURL = std::wstring(leagueURL.begin(), leagueURL.end());
-	LPCWSTR finalURL = tempURL.c_str();
-
-	HINTERNET url = InternetOpenUrl(connect, finalURL, header, -1L, NULL, NULL);
-
-	DWORD blocksize = 1024;
-	DWORD dwTemp;
-	HANDLE hFile = CreateFile(L"data\\received_html_data", GENERIC_READ | GENERIC_WRITE, NULL, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	DWORD dwBytesRead = 1;
-
-	for (; dwBytesRead > 0;)
-	{
-		InternetReadFile(url, &blocksize, (DWORD)sizeof(blocksize), &dwBytesRead);
-		WriteFile(hFile, &blocksize, dwBytesRead, &dwTemp, NULL);
-	}
-
-	CloseHandle(hFile);
-	InternetCloseHandle(url);
-}
-
-void CleanHtmlData() {
-	std::ifstream data{ "data\\received_html_data" };
-	std::ofstream cleanDataOut{ "data\\cleaned_data" };
-
-	while (!data.eof()) {
-		char ch = data.get();
-		if (ch == '{' || ch == '}' || ch == ':' || ch == '[' || ch == ']' || ch == '"' || ch == ',' || ch == ' ')
-			cleanDataOut << ' ';
-		else
-			cleanDataOut << ch;
-	}
-	data.close();
-	cleanDataOut.close();
-}
-
-//raw data with "currencyTypeName" keyword
-void ParseCurrencyData(const int& x) {
-	//working vector
-	std::vector<CurrencyInfo::RatesStruct>worker;
-	worker.reserve(CurrencyInfo::links[x].reserveSize);
-
-	CleanHtmlData();
-
-	std::vector<std::string>trash = { "Armourer's Scrap", "Scroll of Wisdom", "Orb of Transmutation", "Blacksmith's Whetstone", "Portal Scroll", "Orb of Augmentation", "Scroll of Wisdom"};
-
-	std::ifstream cleanDataIn{ "data\\cleaned_data" };
-	std::string keyword, name;
-	int countValue = 0, countVector = 0;
-	bool curFound = false;
-	float curValue = 0;
-	while (cleanDataIn >> keyword) {
-		if (keyword == "currencyTypeName") {
-			if (countValue == 1) {
-				worker[countVector].value = curValue;
-				countValue = 0;
-				++countVector;
-			} 
-			curFound = true;
-			int maxLoop = 0;
-			while (maxLoop < 5) {
-				cleanDataIn >> keyword;
-				if (keyword == "pay")
+			//Build currency name
+			while (dataIn >> word) {
+				if (word == L"pay")
 					break;
 				else {
-					name += keyword + ' ';
-					++maxLoop;
+					name += word + L' ';
 				}
 			}
-			name.erase(name.size() - 1);
-			worker.emplace_back(CurrencyInfo::RatesStruct{ name, 0 });
-			name = "";
-			continue;
-		}
-		if (keyword == "value" && curFound) {
-			++countValue;
-			cleanDataIn >> curValue;
-			if (countValue == 2) {
-				if (countVector >= static_cast<int>(worker.size())) {
-					MessageBox(NULL, L"Vector out of range (currency update)!", L"Error", NULL);
-					return;
-				}
-				//filter out trash currency
-				bool trashFound = false;
-				for (int i = 0; i < trash.size(); ++i) {
-					if (trash[i] == worker[countVector].name) {
-						worker[countVector].value = 0;
-						trashFound = true;
+
+			//Look for currency value in Chaos Orbs
+			//Value one is Chaos Orb worth in that currency, value two is how much found currency is worth in Chaos Orbs
+			//Example - Exalted Orb first value is 0.0082, second value is 118 (Exalted Orb is 118 Chaos Orbs)
+			float curValue = 0;
+			int countValue = 0;
+			while (dataIn >> word) {
+				if (word == L"value") { //Two "value" keywords for some currency names
+					++countValue; //Count "value" occurrences
+					dataIn >> curValue; //Store each "value"
+					if (countValue == 2) { //Stop looping after second "value" and store it into vector
+						//Save currency name and value to vector
+						temp.emplace_back(CurrencyInfo::RatesStruct{ Utilities::RemoveTrailingChar(name), curValue });
 						break;
 					}
 				}
-				if (!trashFound) {
-					worker[countVector].value = curValue;
+				else if (word == L"currencyTypeName") { //Loop didnt break because second "value" was not found, and next currency name was found
+					//Save currency name and value to vector
+					temp.emplace_back(CurrencyInfo::RatesStruct{ Utilities::RemoveTrailingChar(name), curValue });
+					goto currencyFound;
 				}
-				++countVector;
-				countValue = 0;
-				curFound = false;
 			}
 		}
-
+		else if (word == L"currencyDetails") //After this keyword, file containt lots of unnecessary data
+			break;
 	}
-	cleanDataIn.close();
-
-	if (worker.size() == 0) {
-		MessageBox(NULL, L"Error parsing HTML file!\nCheck if league setting is valid.", L"Error", NULL);
-		CurrencyInfo::validHTML = false;
-		return;
-	}
-	else
-		CurrencyInfo::validHTML = true;
-	
-	//add Chaos Orb, value of 1 to list
-	if (x == 0)
-		worker.emplace_back(CurrencyInfo::RatesStruct{std::string("Chaos Orb"), float(1.0)});
-	
-	//save currency rates to file, used when starting up the script / save sextant prices for later use
-	std::ofstream ostRates{ CurrencyInfo::links[x].fileName };
-	if (x == 0) { //currency rates
-		for (int i = 0; i < static_cast<int>(worker.size()); ++i) {
-			ostRates << worker[i].value << ' ' << worker[i].name << '\n';
-			if (worker[i].name == "Vaal Orb")
-				CurrencyInfo::vaalPrice = worker[i].value;
-			else if (worker[i].name == "Orb of Alchemy")
-				CurrencyInfo::alchPrice = worker[i].value;
-			else if (worker[i].name == "Cartographer's Chisel")
-				CurrencyInfo::chiselPrice = worker[i].value;
-		}
-		CurrencyInfo::currencyRates = worker;
-	}
-	else {
-		for (int i = 0; i < static_cast<int>(worker.size()); ++i)
-			ostRates << worker[i].value << ' ' << worker[i].name << '\n';
-		CurrencyInfo::fragmentRates = worker;
-	}
+	temp.shrink_to_fit(); //Shrink excess reserved space
+	destination = temp; //Assign parsed data to vector for later use
 }
 
-//raw data with "name" keyword
-void ParseData(const int& x) {
-	//working vector
-	std::vector<CurrencyInfo::RatesStruct>tempRates;
-	tempRates.reserve(CurrencyInfo::links[x].reserveSize);
+//Raw data with "name" keyword
+void ParseData(const std::wstring& input, std::vector<CurrencyInfo::RatesStruct>& destination) {
+	std::wifstream dataIn{ input };
+	if (!dataIn)
+		MessageBox(NULL, L"ParseData failed, input not found!", L"Error", NULL);
 
-	CleanHtmlData();
+	std::wstring word;
+	std::vector<CurrencyInfo::RatesStruct> temp;
+	temp.reserve(400); //Reserving space should prevent unnecessary copying when adding data to vector
 
-	//parsing cleaned data for names and prices
-	std::ifstream cleanDataIn{ "data\\cleaned_data" };
-	std::string keyword, name;
-	int countVector = 0;
-	bool nameFound = false, valueFound = false;
-	//example - "name some item name icon"
-	while (cleanDataIn >> keyword) {
-		if (keyword == "name") {
-			if (nameFound)
-				continue;
-			else
-				nameFound = true;
-			int maxLoop = 0;
-			while (maxLoop < 10) { //name shouldn't be more then 10 words long, break loop if "icon" keyword not found
-				cleanDataIn >> keyword;
-				if (keyword == "icon")
+	//Example - "name The Perandus Manor icon"
+	while (dataIn >> word) {
+		if (word == L"name") {
+			std::wstring name;
+
+			//Build currency name
+			while (dataIn >> word) {
+				if (word == L"icon")
 					break;
 				else {
-					name += keyword + ' ';
-					++maxLoop;
+					name += word + L' ';
 				}
 			}
-			name.erase(name.size() - 1); //remove trailing space
-			tempRates.emplace_back(CurrencyInfo::RatesStruct{ name, 0 });
-			++countVector;
-			name = "";
-			valueFound = false;
-			continue;
-		}
-		if (keyword == "chaosValue") {
-			if (valueFound) //in case of 2 consecutive "chaosValue" before reaching "name"
-				continue;
-			else
-				valueFound = true;
-			nameFound = false; //value found (reset) - look for next "name"
-			float curValue;
-			if (!(cleanDataIn >> curValue)) {
-				tempRates.clear();
-				MessageBox(NULL, L"Value not found, please re-run updater!", L"Error", NULL);
-				break;
+
+			//Look for currency value in Chaos Orbs
+			float curValue = 0;
+			while (dataIn >> word) {
+				if (word == L"chaosValue") {
+					dataIn >> curValue;
+					break;
+				}
 			}
-			else
-				tempRates[countVector - 1].value = curValue;
+
+			//Save currency name and value to vector
+			temp.emplace_back(CurrencyInfo::RatesStruct{ Utilities::RemoveTrailingChar(name), curValue });
 		}
 	}
-	cleanDataIn.close();
+	temp.shrink_to_fit(); //Shrink excess reserved space
+	destination = temp; //Assign parsed data to vector for later use
+}
 
-	if (x == 1)
-		CurrencyInfo::divinationCardRates = tempRates;
-	else if (x == 2)
-		CurrencyInfo::mapRates = tempRates;
-	else if (x == 3) {
-		for (int i = 0; i < tempRates.size(); ++i)
-			if (tempRates[i].name[0] == 'C')
-				tempRates[i].name = "Caer Blaidd, Wolfpack's Den";
-			else if (tempRates[i].name[0] == 'M' && tempRates[i].name != "Mao Kun")
-				tempRates[i].name = "Maelström of Chaos";
-		CurrencyInfo::uniqueMapRates = tempRates;
-	}
-	else if (x == 5) //add essences to currency list
-		CurrencyInfo::currencyRates.insert(CurrencyInfo::currencyRates.end(), tempRates.begin(), tempRates.end());
-	else if (x == 6) //add scarab rates to fragments list
-		CurrencyInfo::fragmentRates.insert(CurrencyInfo::fragmentRates.end(), tempRates.begin(), tempRates.end());
+//Save rates to file
+void SaveRates(std::vector<CurrencyInfo::RatesStruct>& input, const std::wstring& outPath) {
+	std::wofstream ost{ outPath };
+	for (size_t i = 0; i < input.size(); ++i)
+		ost << input[i].value << ' ' << input[i].name << '\n';
+}
 
-	//save rates to a file, used when starting up script
-	if (x == 5) {
-		std::ofstream ostRates2{ CurrencyInfo::links[0].fileName, std::ios_base::app }; //add essence rates to document with currency (both are rarity "currency")
-		for (int i = 0; i < static_cast<int>(tempRates.size()); ++i)
-			ostRates2 << tempRates[i].value << ' ' << tempRates[i].name << '\n';
-	}
-	else if (x == 6) {
-		std::ofstream ostRates3{ CurrencyInfo::links[4].fileName, std::ios_base::app }; //add scarab rates to document with fragment (both are rarity "normal")
-		for (int i = 0; i < static_cast<int>(tempRates.size()); ++i)
-			ostRates3 << tempRates[i].value << ' ' << tempRates[i].name << '\n';
-	}
-	else {
-		std::ofstream ostRates{ CurrencyInfo::links[x].fileName };
-		for (int i = 0; i < static_cast<int>(tempRates.size()); ++i)
-			ostRates << tempRates[i].value << ' ' << tempRates[i].name << '\n';
+void CurrencyInfo::SaveAllRates() {
+	SaveRates(CurrencyInfo::currencyRates, L"data\\currency_rates");
+	SaveRates(CurrencyInfo::divinationCardRates, L"data\\divination_card_rates");
+	SaveRates(CurrencyInfo::mapRates, L"data\\map_rates");
+	SaveRates(CurrencyInfo::uniqueMapRates, L"data\\unique_map_rates");
+	SaveRates(CurrencyInfo::fragmentRates, L"data\\fragment_rates");
+	SaveRates(CurrencyInfo::scarabRates, L"data\\scarab_rates");
+	SaveRates(CurrencyInfo::essenceRates, L"data\\essence_rates");
+	SaveRates(CurrencyInfo::fossilRates, L"data\\fossil_rates");
+	SaveRates(CurrencyInfo::resonatorRates, L"data\\resonator_rates");
+	SaveRates(CurrencyInfo::incubatorRates, L"data\\incubator_rates");
+	SaveRates(CurrencyInfo::prophecyRates, L"data\\prophecy_rates");
+	SaveRates(CurrencyInfo::oilRates, L"data\\oil_rates");
+}
+
+void CurrencyInfo::OnRatesUpdated() {
+	//Make update button clickable
+	EnableWindow(DialogWindow::updateButton, true);
+
+	//Change status message
+	SetWindowText(DialogWindow::updateStatusWnd, L"Update Finished!");
+
+	//Calculate cartographers sextant price
+	csPrice = Calculator::CalculateCSPrice(Settings::GetInstance().GetCS());
+
+	GetMapCurrency();
+
+	//Save rates to a file
+	SaveAllRates();
+}
+
+//Store rates of vaal, alchemy and chisel for later use
+void CurrencyInfo::GetMapCurrency() {
+	for (size_t i = 0; i < CurrencyInfo::currencyRates.size(); ++i) {
+		if (CurrencyInfo::currencyRates[i].name == L"Vaal Orb")
+			CurrencyInfo::vaalPrice = CurrencyInfo::currencyRates[i].value;
+		else if (CurrencyInfo::currencyRates[i].name == L"Orb of Alchemy")
+			CurrencyInfo::alchPrice = CurrencyInfo::currencyRates[i].value;
+		else if (CurrencyInfo::currencyRates[i].name == L"Cartographer's Chisel")
+			CurrencyInfo::chiselPrice = CurrencyInfo::currencyRates[i].value;
 	}
 }
 
-void CurrencyInfo::UpdateCurrencyRates(const std::string& league) {
-	for (int i = 0; i < CurrencyInfo::numberOfRateGroups; ++i) {
-		GetHtmlData(league, CurrencyInfo::links[i].link);
-		if (i == 0 || i == 4) //does not indicate rarity "Currency", only structure of the received HTML data
-			ParseCurrencyData(i);
-		else
-			ParseData(i);
-		if (!CurrencyInfo::validHTML)
-			break;
-		SendMessage(DialogWindow::hProgress, PBM_STEPIT, 0, 0);
-	}
+void CurrencyInfo::OnCurrencyRatesLoaded() {
+	GetMapCurrency();
+	csPrice = Calculator::CalculateCSPrice(Settings::GetInstance().GetCS());
+}
+
+//Clear vector data, otherwise, vector will fill up indefinitely when updating rates
+void CurrencyInfo::ResetVectorData() {
+	CurrencyInfo::currencyRates.clear();
+	CurrencyInfo::divinationCardRates.clear();
+	CurrencyInfo::mapRates.clear();
+	CurrencyInfo::uniqueMapRates.clear();
+	CurrencyInfo::fragmentRates.clear();
+	CurrencyInfo::scarabRates.clear();
+	CurrencyInfo::essenceRates.clear();
+	CurrencyInfo::fossilRates.clear();
+	CurrencyInfo::resonatorRates.clear();
+	CurrencyInfo::incubatorRates.clear();
+	CurrencyInfo::prophecyRates.clear();
+	CurrencyInfo::oilRates.clear();
+}
+
+void CurrencyInfo::UpdateRates() {
+	std::wstring tempFile = L"data\\received_html_data";
+	std::wstring cleanedHTML = L"data\\cleaned_data";
+
+	ResetVectorData();
+
+	//Get league name
+	std::wstring league = Settings::GetInstance().GetLeague();
+
+	//Currency Rates
+	Utilities::GetHtmlData((L"https://poe.ninja/api/Data/GetCurrencyOverview?league=" + league), tempFile);
+	Utilities::CleanHtmlData(tempFile, cleanedHTML);
+	ParseCurrencyData(cleanedHTML, CurrencyInfo::currencyRates);
+	CurrencyInfo::currencyRates.emplace_back(RatesStruct{ L"Chaos Orb", 1.0f }); //Manually add chaos orb to the list
+	OnCurrencyRatesLoaded();
+	SendMessage(DialogWindow::hProgress, PBM_STEPIT, 0, 0);
+
+	//Divination Card Rates
+	Utilities::GetHtmlData((L"https://poe.ninja/api/Data/GetDivinationCardsOverview?league=" + league), tempFile);
+	Utilities::CleanHtmlData(tempFile, cleanedHTML);
+	ParseData(cleanedHTML, CurrencyInfo::divinationCardRates);
+	SendMessage(DialogWindow::hProgress, PBM_STEPIT, 0, 0);
+
+	//Map Rates
+	Utilities::GetHtmlData((L"https://poe.ninja/api/Data/GetMapOverview?league=" + league), tempFile);
+	Utilities::CleanHtmlData(tempFile, cleanedHTML);
+	ParseData(cleanedHTML, CurrencyInfo::mapRates);
+	SendMessage(DialogWindow::hProgress, PBM_STEPIT, 0, 0);
+
+	//Unique Map Rates
+	Utilities::GetHtmlData((L"https://poe.ninja/api/Data/GetUniqueMapOverview?league=" + league), tempFile);
+	Utilities::CleanHtmlData(tempFile, cleanedHTML);
+	ParseData(cleanedHTML, CurrencyInfo::uniqueMapRates);
+	SendMessage(DialogWindow::hProgress, PBM_STEPIT, 0, 0);
+
+	//Fragment Rates
+	Utilities::GetHtmlData((L"https://poe.ninja/api/Data/GetFragmentOverview?league=" + league), tempFile);
+	Utilities::CleanHtmlData(tempFile, cleanedHTML);
+	ParseCurrencyData(cleanedHTML, CurrencyInfo::fragmentRates);
+	SendMessage(DialogWindow::hProgress, PBM_STEPIT, 0, 0);
+
+	//Essence Rates
+	Utilities::GetHtmlData((L"https://poe.ninja/api/Data/GetEssenceOverview?league=" + league), tempFile);
+	Utilities::CleanHtmlData(tempFile, cleanedHTML);
+	ParseData(cleanedHTML, CurrencyInfo::essenceRates);
+	SendMessage(DialogWindow::hProgress, PBM_STEPIT, 0, 0);
+
+	//Scarab Rates
+	Utilities::GetHtmlData((L"https://poe.ninja/api/data/itemoverview?league=" + league + L"&type=Scarab"), tempFile);
+	Utilities::CleanHtmlData(tempFile, cleanedHTML);
+	ParseData(cleanedHTML, CurrencyInfo::scarabRates);
+	SendMessage(DialogWindow::hProgress, PBM_STEPIT, 0, 0);
+
+	//Fossil Rates
+	Utilities::GetHtmlData((L"https://poe.ninja/api/data/itemoverview?league=" + league + L"&type=Fossil"), tempFile);
+	Utilities::CleanHtmlData(tempFile, cleanedHTML);
+	ParseData(cleanedHTML, CurrencyInfo::fossilRates);
+	SendMessage(DialogWindow::hProgress, PBM_STEPIT, 0, 0);
+
+	//Resonator Rates
+	Utilities::GetHtmlData((L"https://poe.ninja/api/data/itemoverview?league=" + league + L"&type=Resonator"), tempFile);
+	Utilities::CleanHtmlData(tempFile, cleanedHTML);
+	ParseData(cleanedHTML, CurrencyInfo::resonatorRates);
+	SendMessage(DialogWindow::hProgress, PBM_STEPIT, 0, 0);
+
+	//Incubator Rates
+	Utilities::GetHtmlData((L"https://poe.ninja/api/data/itemoverview?league=" + league + L"&type=Incubator"), tempFile);
+	Utilities::CleanHtmlData(tempFile, cleanedHTML);
+	ParseData(cleanedHTML, CurrencyInfo::incubatorRates);
+	SendMessage(DialogWindow::hProgress, PBM_STEPIT, 0, 0);
+
+	//Prophecy Rates
+	Utilities::GetHtmlData((L"https://poe.ninja/api/data/itemoverview?league=" + league + L"&type=Prophecy"), tempFile);
+	Utilities::CleanHtmlData(tempFile, cleanedHTML);
+	ParseData(cleanedHTML, CurrencyInfo::prophecyRates);
+	SendMessage(DialogWindow::hProgress, PBM_STEPIT, 0, 0);
+
+	//Oil Rates
+	Utilities::GetHtmlData((L"https://poe.ninja/api/data/itemoverview?league=" + league + L"&type=Oil"), tempFile);
+	Utilities::CleanHtmlData(tempFile, cleanedHTML);
+	ParseData(cleanedHTML, CurrencyInfo::oilRates);
+	SendMessage(DialogWindow::hProgress, PBM_STEPIT, 0, 0);
+
+	//Remove files (cleanup)
 	remove("data\\received_html_data");
 	remove("data\\cleaned_data");
-	if (CurrencyInfo::validHTML) {
-		SetWindowText(DialogWindow::updateStatusWnd, L"Update Finished!");
-		currencyRatesUpdated = true;
-	}
-	else
-		SetWindowText(DialogWindow::updateStatusWnd, L"Update Failed!");
-	EnableWindow(DialogWindow::updateButton, true);
+
+	OnRatesUpdated();
 }
 
-//Read currency ratesfrom the file
-void CurrencyInfo::InitCurencyRates() {
-	if (!CurrencyInfo::ReadRates(CurrencyInfo::currencyRates, 0)) { //Show message if there is no file containing data
+//Read currency rates from file
+void CurrencyInfo::LoadCurencyRates() {
+
+	//Show message if there is no file containing data
+	if (!CurrencyInfo::ReadRates(L"data\\currency_rates", CurrencyInfo::currencyRates)) {
 		if (showMessage) {
 			MessageBox(NULL, L"Error reading currency rates, please update rates!", L"Warning", NULL);
 			showMessage = false;
 		}
-		CurrencyInfo::currencyRatesLoaded = false;
 	}
-	else
-		CurrencyInfo::currencyRatesLoaded = true;
-	if (!CurrencyInfo::ReadRates(CurrencyInfo::divinationCardRates, 1))
+
+	if (!CurrencyInfo::ReadRates(L"data\\divination_card_rates", CurrencyInfo::divinationCardRates))
 		if (showMessage) {
 			MessageBox(NULL, L"Error reading divination card rates, please update rates!", L"Warning", NULL);
 			showMessage = false;
 		}
-	if (!CurrencyInfo::ReadRates(CurrencyInfo::mapRates, 2))
+
+	if (!CurrencyInfo::ReadRates(L"data\\map_rates", CurrencyInfo::mapRates))
 		if (showMessage) {
 			MessageBox(NULL, L"Error reading map rates, please update rates!", L"Warning", NULL);
 			showMessage = false;
 		}
-	if (!CurrencyInfo::ReadRates(CurrencyInfo::uniqueMapRates, 3))
+
+	if (!CurrencyInfo::ReadRates(L"data\\unique_map_rates", CurrencyInfo::uniqueMapRates))
 		if (showMessage) {
 			MessageBox(NULL, L"Error reading unique map rates, please update rates!", L"Warning", NULL);
 			showMessage = false;
 		}
-	if (!CurrencyInfo::ReadRates(CurrencyInfo::fragmentRates, 4)) {
-		if (showMessage) MessageBox(NULL, L"Error reading fragment rates, please update rates!", L"Warning", NULL);
+
+	if (!CurrencyInfo::ReadRates(L"data\\fragment_rates", CurrencyInfo::fragmentRates))
+		if (showMessage) {
+			MessageBox(NULL, L"Error reading fragment rates, please update rates!", L"Warning", NULL);
+			showMessage = false;
+		}
+
+	if (!CurrencyInfo::ReadRates(L"data\\essence_rates", CurrencyInfo::essenceRates))
+		if (showMessage) {
+			MessageBox(NULL, L"Error reading essence rates, please update rates!", L"Warning", NULL);
+			showMessage = false;
+		}
+
+	if (!CurrencyInfo::ReadRates(L"data\\fossil_rates", CurrencyInfo::fossilRates))
+		if (showMessage) {
+			MessageBox(NULL, L"Error reading fossil rates, please update rates!", L"Warning", NULL);
+			showMessage = false;
+		}
+
+	if (!CurrencyInfo::ReadRates(L"data\\resonator_rates", CurrencyInfo::resonatorRates))
+		if (showMessage) {
+			MessageBox(NULL, L"Error reading resonator rates, please update rates!", L"Warning", NULL);
+			showMessage = false;
+		}
+
+	if (!CurrencyInfo::ReadRates(L"data\\incubator_rates", CurrencyInfo::incubatorRates))
+		if (showMessage) {
+			MessageBox(NULL, L"Error reading incubator rates, please update rates!", L"Warning", NULL);
+			showMessage = false;
+		}
+
+	if (!CurrencyInfo::ReadRates(L"data\\prophecy_rates", CurrencyInfo::prophecyRates))
+		if (showMessage) {
+			MessageBox(NULL, L"Error reading prophecy rates, please update rates!", L"Warning", NULL);
+			showMessage = false;
+		}
+
+	if (!CurrencyInfo::ReadRates(L"data\\oil_rates", CurrencyInfo::oilRates))
+		if (showMessage) {
+			MessageBox(NULL, L"Error reading oil rates, please update rates!", L"Warning", NULL);
+			showMessage = false;
+		}
+
+	if (!CurrencyInfo::ReadRates(L"data\\scarab_rates", CurrencyInfo::scarabRates)) {
+		if (showMessage) MessageBox(NULL, L"Error reading scarab rates, please update rates!", L"Warning", NULL);
 	}
+
+	OnCurrencyRatesLoaded();
 }
 
-void GetRepoData() {
-	LPCWSTR userAgent = L"Mozilla / 5.0 (Windows NT 10.0; Win64; x64; rv:63.0) Gecko / 20100101 Firefox / 63.0";
-	LPCWSTR header = L"Accept-Encoding: gzip, deflate";
-
-	HINTERNET connect = InternetOpen(userAgent, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, NULL);
-	if (!connect) {
-		MessageBox(NULL, L"Connection failed or syntax error!", L"Error", MB_OK);
+//Get item value from list of rates, based on item name or base
+float CurrencyInfo::GetRate(const std::vector<CurrencyInfo::RatesStruct>& rates, const Item& item) {
+	for (size_t i = 0; i < rates.size(); i++) {
+		if ((item.GetName() == rates[i].name) || (item.GetBase() == rates[i].name)) {
+			return rates[i].value;
+		}
 	}
-
-	BOOL isDecoding = true;
-	BOOL decoding = InternetSetOption(connect, INTERNET_OPTION_HTTP_DECODING, &isDecoding, sizeof(isDecoding));
-	if (!decoding) {
-		MessageBox(NULL, L"Connection not decoded!", L"Error", MB_OK);
-	}
-
-	HINTERNET url = InternetOpenUrl(connect, L"https://api.github.com/repos/Cailoki/PoE-FarmingTool/releases", header, -1L, NULL, NULL);
-
-	DWORD blocksize = 1024;
-	DWORD dwTemp;
-	HANDLE hFile = CreateFile(L"data\\github_raw", GENERIC_READ | GENERIC_WRITE, NULL, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	DWORD dwBytesRead = 1;
-
-	for (; dwBytesRead > 0;)
-	{
-		InternetReadFile(url, &blocksize, (DWORD)sizeof(blocksize), &dwBytesRead);
-		WriteFile(hFile, &blocksize, dwBytesRead, &dwTemp, NULL);
-	}
-
-	CloseHandle(hFile);
-	InternetCloseHandle(url);
+	return 0.0f;
 }

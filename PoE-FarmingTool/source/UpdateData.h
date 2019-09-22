@@ -1,24 +1,39 @@
 #pragma once
+#include "Models.h"
 
-//By declaring a function member as static, you make it independent of any particular object of the class.
-//A static member function can be called even if no objects of the class exist and the static functions 
-//are accessed using only the class name and the scope resolution operator ::
 class CurrencyInfo {
+private:
+	static void GetMapCurrency();
 public:
-	struct RatesStruct { std::string name; float value; };
-	struct LinksStruct { std::string fileName, link; int reserveSize; };
-	static std::vector<RatesStruct>currencyRates; //0
-	static std::vector<RatesStruct>divinationCardRates; //1
-	static std::vector<RatesStruct>mapRates; //2
-	static std::vector<RatesStruct>uniqueMapRates; //3
-	static std::vector<RatesStruct>fragmentRates; //4
-	static std::vector<LinksStruct>links;
-	static void UpdateCurrencyRates(const std::string& league);
-	static void InitCurencyRates();
-	static bool ReadRates(std::vector<CurrencyInfo::RatesStruct>& rates, const int& x);
-	static float chiselPrice, alchPrice, vaalPrice;
-	static bool validHTML, showMessage, currencyRatesLoaded, currencyRatesUpdated;
-	static const int numberOfRateGroups = 7; //used for few for loops and progress bar steps
-};
+	struct RatesStruct { std::wstring name; float value; };
 
-void GetRepoData();
+	//Collection of rates separated by type and rarity
+	static std::vector<RatesStruct>currencyRates;
+	static std::vector<RatesStruct>divinationCardRates;
+	static std::vector<RatesStruct>mapRates;
+	static std::vector<RatesStruct>uniqueMapRates;
+	static std::vector<RatesStruct>fragmentRates;
+	static std::vector<RatesStruct>scarabRates;
+	static std::vector<RatesStruct>essenceRates;
+	static std::vector<RatesStruct>fossilRates;
+	static std::vector<RatesStruct>resonatorRates;
+	static std::vector<RatesStruct>incubatorRates;
+	static std::vector<RatesStruct>prophecyRates;
+	static std::vector<RatesStruct>oilRates;
+
+	static bool ReadRates(const std::wstring& source, std::vector<CurrencyInfo::RatesStruct>& destination);
+	static void UpdateRates();
+	static void LoadCurencyRates();
+	static void SaveAllRates();
+	static float GetRate(const std::vector<RatesStruct>& rates, const Item& item);
+	static void OnRatesUpdated();
+	static void OnCurrencyRatesLoaded();
+	static void ResetVectorData();
+	static void SetCsValue(const float& val) { csPrice = val; }
+
+	//Extracted prices of currency and average price of sextant used
+	static float chiselPrice, alchPrice, vaalPrice, csPrice;
+
+	//Used to show only one message box if something fails during loading currency rates
+	static bool showMessage;
+};

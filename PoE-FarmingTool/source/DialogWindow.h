@@ -1,37 +1,31 @@
 #pragma once
-
-#define DIALOG_WINDOW_CANCEL 8
-#define DIALOG_WINDOW_SAVE_MAP 9
-#define DIALOG_WINDOW_SAVE_IIQ 10
-#define DIALOG_WINDOW_SAVE_CS 11
-#define DIALOG_WINDOW_SAVE_LEAGUE 12
-#define DIALOG_WINDOW_UPDATE_CURRENCY 13
-#define DIALOG_WINDOW_CHECKBOX_GENERAL 14
-#define DIALOG_WINDOW_SAVE_OVERLAY_SETTINGS 15
-#define DIALOG_WINDOW_PLUS_PROFIT 16
-#define DIALOG_WINDOW_PLUS_SPENT 17
-#define DIALOG_WINDOW_SAVELOC 18
+#include "Settings.h"
 
 class DialogWindow {
 public:
-	static void OpenMapDialog(HWND, wchar_t[50], wchar_t[10], wchar_t[10]);
-	static void OpenIIQDialog(HWND, wchar_t[5]);
-	static void OpenSextantDialog(HWND, wchar_t[10]);
+	static std::wstring GetNewLeague();
+	static std::wstring GetCS();
+	static std::wstring GetIIQ();
+	static std::wstring GetLogLocation();
+	static MapSettings GetMapSettings(const HWND& hWnd);
+	static std::pair<float, float> GetOverlaySettings();
+	static void OnGeneralCheckboxChecked(const HWND& hWnd);
+	static float GetSpentValue();
+	static float GetProfitValue();
+
+	static void OpenMapDialog(HWND);
+	static void OpenIIQDialog(HWND);
+	static void OpenSextantDialog(HWND);
 	static void OpenLeagueDialog(HWND);
-	static void OpenOverlayDialog(HWND, const float&, const float&);
+	static void OpenOverlaySettingsDialog(HWND);
 	static void OpenPlusProfitDialog(HWND);
 	static void OpenPlusSpentDialog(HWND);
-	static void OpenTipsDialog(HWND);
 	static void OpenAboutDialog(HWND);
 	static void OpenSetLogLocation();
-	static void UpdateCurrencyDialog(HWND, int);
+	static void UpdateCurrencyDialog(HWND);
 	static void RegisterDialogClass();
-	static void SetIsGeneral(bool); //farming type "general"
-	static bool GetIsGeneral() { return isGeneral; } //farming type "general"
-	static HWND setMapWnd, setIIQWnd, setCSWnd, hProgress, updateStatusWnd, setMapPriceWnd, generalCheckbox, 
+	static HWND setMapWnd, setIIQWnd, setCSWnd, hProgress, updateStatusWnd, setMapPriceWnd, generalCheckbox, trashCheckbox, 
 		setXPosWnd, setYPosWnd, plusProfitWnd, plusSpentWnd, setZanaModPrice, logLoc, comboBoxWnd, updateButton;
-private:
-	static bool isGeneral; //farming type "general"
 };
 
 LRESULT CALLBACK DialogProcedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
