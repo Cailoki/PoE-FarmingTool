@@ -16,7 +16,7 @@ public:
 	const bool Check() const;
 	const std::wstring& GetVersion() const { return version; }
 private:
-	const std::wstring version = L"v1.1.0";
+	const std::wstring version = L"v1.1.1";
 	const std::wstring githubApiURL = L"https://api.github.com/repos/Cailoki/PoE-FarmingTool/releases";
 };
 
