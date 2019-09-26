@@ -37,7 +37,7 @@ HFONT hFontTitle = CreateFont(18, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT
 void MainWindow::ShowLabels(const HDC& hdc) {
 	//1. Row
 	TextOut(hdc, 20, 40, L"Map:", static_cast<int>(wcslen(L"Map:")));
-	TextOut(hdc, 255, 40, L"League:", static_cast<int>(wcslen(L"League:")));
+	TextOut(hdc, 250, 40, L"League:", static_cast<int>(wcslen(L"League:")));
 	//2. Row
 	TextOut(hdc, 20, 70, L"Map price:", static_cast<int>(wcslen(L"Map price:")));
 	TextOut(hdc, 155, 70, L"IIQ:", static_cast<int>(wcslen(L"IIQ:")));
@@ -68,7 +68,7 @@ void MainWindow::ShowUpdatingText(const HWND& hWnd) {
 	DWORD dwStyleImage = WS_CHILD | WS_VISIBLE | SS_BITMAP | WS_BORDER | SS_NOTIFY;
 	//1.Row
 	mapNameWnd = CreateWindow(L"Static", Settings::GetInstance().GetMapName().c_str(), dwStyleText, 55, 40, 180, 20, hWnd, NULL, NULL, NULL);
-	leagueWnd = CreateWindow(L"Static", Settings::GetInstance().GetLeague().c_str(), dwStyleText, 305, 40, 95, 20, hWnd, NULL, NULL, NULL);
+	leagueWnd = CreateWindow(L"Static", Settings::GetInstance().GetSelectedLeague().c_str(), dwStyleText, 300, 40, 100, 20, hWnd, NULL, NULL, NULL);
 	//2. Row
 	mapPriceWnd = CreateWindow(L"Static", Converter<float>::ToWstring(Settings::GetInstance().GetMapPrice()).c_str(), dwStyleText, 85, 70, 50, 20, hWnd, NULL, NULL, NULL);
 	IIQWnd = CreateWindow(L"Static", Converter<int>::ToWstring(Settings::GetInstance().GetIIQ()).c_str(), dwStyleText, 177, 70, 50, 20, hWnd, NULL, NULL, NULL);
