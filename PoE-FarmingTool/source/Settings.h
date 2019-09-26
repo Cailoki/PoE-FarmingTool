@@ -25,6 +25,7 @@ public:
 	const std::wstring GetMapName() const { return mapName; }
 	const int GetModPrice() const { return zanaModPrice; }
 	const std::wstring GetLeagueHC() const { return leagueHC; }
+	const std::wstring GetSelectedLeague() const { return selectedLeague; }
 	const float GetOverlayXPos() const { return xPosOverlay; }
 	const float GetOverlayYPos() const { return yPosOverlay; }
 	const int GetProgressBarSteps() const { return progressBarSteps; }
@@ -48,7 +49,7 @@ private:
 	std::wstring cs = L"0-0-0";
 	int iiq = 0, progressBarSteps = 12;
 	//League group -> change on every new league update (MAKE SURE THERE ARE NO TYPOS!)
-	std::wstring league = L"Blight", leagueHC = L"HC Blight", leagueHardcore = L"Hardcore Blight";
+	std::wstring selectedLeague = L"Blight", league = L"Blight", leagueHC = L"Hardcore Blight";
 	//Map settings group
 	std::wstring mapName = L"General";
 	float mapPrice = 0.0f;

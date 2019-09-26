@@ -219,7 +219,7 @@ void CurrencyInfo::UpdateRates() {
 	ResetVectorData();
 
 	//Get league name
-	std::wstring league = Settings::GetInstance().GetLeague();
+	std::wstring league = Settings::GetInstance().GetSelectedLeague();
 
 	//Currency Rates
 	Utilities::GetHtmlData((L"https://poe.ninja/api/Data/GetCurrencyOverview?league=" + league), tempFile);

@@ -40,11 +40,7 @@ bool Settings::SetCS(const std::wstring& newCS){
 }
 
 void Settings::SetLeague(const std::wstring& newLeague) {
-	//Api needs "Hardcore League" at the end of the link 
-	if (newLeague == leagueHC)
-		league = leagueHardcore;
-	else
-		league = newLeague;
+	selectedLeague = newLeague;
 
 	OnSettingsChanged();
 }
@@ -81,7 +77,7 @@ void Settings::SaveSettings(){
 	std::wofstream ost{ settingsFileName };
 	ost << clientLogLocation << '\n'
 		<< mapName << '\n'
-		<< league << '\n'
+		<< selectedLeague << '\n'
 		<< cs << '\n'
 		<< iiq << '\n'
 		<< mapPrice << '\n'
@@ -97,7 +93,7 @@ void Settings::LoadSettings() {
 	if (sSettingsStream) {
 		std::getline(sSettingsStream, clientLogLocation);
 		std::getline(sSettingsStream, mapName);
-		std::getline(sSettingsStream, league);
+		std::getline(sSettingsStream, selectedLeague);
 		sSettingsStream >> cs
 			>> iiq
 			>> mapPrice
