@@ -94,7 +94,7 @@ void DialogWindow::OpenLeagueDialog(HWND hWnd) {
 std::wstring DialogWindow::GetNewLeague() {
 	//Get value from window and convert it to string
 	wchar_t wLeague[50];
-	GetWindowText(DialogWindow::comboBoxWnd, wLeague, 15);
+	GetWindowText(DialogWindow::comboBoxWnd, wLeague, 50);
 
 	return Utilities::WchartToString(wLeague);
 }

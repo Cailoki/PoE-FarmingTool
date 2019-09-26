@@ -221,6 +221,8 @@ LRESULT CALLBACK DialogProcedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		case DIALOG_WINDOW_SAVE_LEAGUE: {
 			//Save new league
 			Settings::GetInstance().SetLeague(DialogWindow::GetNewLeague());
+			//Display league change on main window
+			SetWindowText(MainWindow::leagueWnd, Settings::GetInstance().GetSelectedLeague().c_str());
 			//Show update currency dialog on league change
 			DialogWindow::UpdateCurrencyDialog(hWnd);
 			MessageBox(NULL, L"League changed, please update currency rates!", L"Warning!", NULL);
