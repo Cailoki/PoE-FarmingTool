@@ -69,6 +69,7 @@ void Settings::SaveMapFarmingSettings(const MapSettings& mapSettings) {
 	zanaModPrice = mapSettings.zanaModPrice;
 	isGeneral = mapSettings.isGeneral;
 	isTrash = mapSettings.isTrash;
+	isParseAll = mapSettings.isParseAll;
 
 	OnSettingsChanged();
 }
@@ -84,6 +85,7 @@ void Settings::SaveSettings(){
 		<< zanaModPrice << '\n'
 		<< isGeneral << '\n'
 		<< isTrash << '\n'
+		<< isParseAll << '\n'
 		<< xPosOverlay << '\n'
 		<< yPosOverlay;
 }
@@ -100,6 +102,7 @@ void Settings::LoadSettings() {
 			>> zanaModPrice
 			>> isGeneral
 			>> isTrash
+			>> isParseAll
 			>> xPosOverlay
 			>> yPosOverlay;
 	}
