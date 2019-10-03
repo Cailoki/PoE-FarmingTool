@@ -186,7 +186,7 @@ LRESULT CALLBACK DialogProcedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			break;
 		}
 		case DIALOG_WINDOW_PLUS_SPENT: {
-			SessionData::GetInstance().AddSpentManual(DialogWindow::GetSpentValue());
+			SessionData::GetInstance().AddSpentManual(DialogWindow::GetAddSpentWindowValues(hWnd));
 			DestroyWindow(hWnd);
 			break;
 		}

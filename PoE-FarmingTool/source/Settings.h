@@ -7,6 +7,7 @@ struct MapSettings {
 	int zanaModPrice = 0;
 	bool isGeneral = true;
 	bool isTrash = false;
+	bool isParseAll = false;
 };
 
 //Global app settings
@@ -19,6 +20,7 @@ public:
 	const std::wstring GetCS() const { return cs; }
 	const bool GetIsGeneral() const { return isGeneral; }
 	const bool GetIsTrash() const { return isTrash; }
+	const bool GetIsParseAll() const { return isParseAll; }
 	const std::wstring GetLeague() const { return league; }
 	const int GetIIQ() const { return iiq; }
 	const float GetMapPrice() const { return mapPrice; }
@@ -54,7 +56,7 @@ private:
 	std::wstring mapName = L"General";
 	float mapPrice = 0.0f;
 	int zanaModPrice = 0;
-	bool isGeneral = true, isTrash = false;
+	bool isGeneral = true, isTrash = false, isParseAll = false;
 	//Overlay
 	float xPosOverlay = 0.0f, yPosOverlay = 0.0f;
 	//Filename

@@ -10,7 +10,7 @@ public:
 	static MapSettings GetMapSettings(const HWND& hWnd);
 	static std::pair<float, float> GetOverlaySettings();
 	static void OnGeneralCheckboxChecked(const HWND& hWnd);
-	static float GetSpentValue();
+	static std::pair<std::wstring, bool> GetAddSpentWindowValues(HWND hWnd);
 	static float GetProfitValue();
 
 	static void OpenMapDialog(HWND);
@@ -25,7 +25,7 @@ public:
 	static void UpdateCurrencyDialog(HWND);
 	static void RegisterDialogClass();
 	static HWND setMapWnd, setIIQWnd, setCSWnd, hProgress, updateStatusWnd, setMapPriceWnd, generalCheckbox, trashCheckbox, 
-		setXPosWnd, setYPosWnd, plusProfitWnd, plusSpentWnd, setZanaModPrice, logLoc, comboBoxWnd, updateButton;
+		setXPosWnd, setYPosWnd, plusProfitWnd, plusSpentWnd, setZanaModPrice, logLoc, comboBoxWnd, updateButton, subtractProfitCheckbox, parseAllCheckbox;
 };
 
 LRESULT CALLBACK DialogProcedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

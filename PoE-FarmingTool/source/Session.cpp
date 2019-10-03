@@ -67,7 +67,7 @@ void SessionData::SubtractSpentOnMap() {
 
 	//Message displayed in history window
 	std::wstring newVal = std::to_wstring(value);
-	if(MapManager::GetInstance().GetMap().GetRarity() == L"Unique")
+	if (MapManager::GetInstance().GetMap().GetRarity() == L"Unique")
 		MainWindow::AddToHistory(MapManager::GetInstance().GetMap().GetName() + L" used! -" + newVal.erase(newVal.size() - 4, newVal.size()));
 	else
 		MainWindow::AddToHistory(MapManager::GetInstance().GetLastParsedMapName() + L" used! -" + newVal.erase(newVal.size() - 4, newVal.size()));
@@ -94,12 +94,19 @@ void SessionData::ResetData() {
 	OnDataChanged();
 }
 
-void SessionData::AddSpentManual(const float& value) {
-	spent += value;
-	lastSpent += value;
+void SessionData::AddSpentManual(const std::pair<std::wstring, bool>& data) {
+	if (Utilities::CheckDigits(data.first)) {
+		spent += stof(data.first);
+		lastSpent += stof(data.first);
+	}
+
+	if (data.second) {
+		profit -= stof(data.first);
+		lastProfit -= stof(data.first);
+	}
 
 	//Message displayed in history window
-	std::wstring newVal = std::to_wstring(value);
+	std::wstring newVal = std::to_wstring(stof(data.first));
 	MainWindow::AddToHistory(L"Manually added spent +" + newVal.erase(newVal.size() - 4, newVal.size()));
 
 	OnDataChanged();
@@ -168,7 +175,7 @@ void LocationManager::OnMapOpened() {
 
 void OnUnspecifiedMapOpened() {
 	MainWindow::CleanHistory(MapManager::GetInstance().GetHistoryEntries());
-	if(SessionData::GetInstance().GetIsFirstMapOpened())
+	if (SessionData::GetInstance().GetIsFirstMapOpened())
 		SessionData::GetInstance().CleanLastProfit();
 
 	//Show last map data
@@ -264,7 +271,7 @@ void LocationManager::ClassifyLocation(const Location& location) {
 
 			OnMapOpened();
 		}
-		else if (isMap){
+		else if (isMap) {
 			OnUnspecifiedMapOpened();
 		}
 	}
@@ -294,7 +301,7 @@ void MapManager::ClassifyInput(const Item& item) {
 	}
 	else if ((item.GetType() == L"Scarab") && isMap) {
 		isScarabAdded = true;
-		if(!CheckDuplicate(item, scarabs))
+		if (!CheckDuplicate(item, scarabs))
 			scarabs.push_back(item);
 		historyEntries++;
 	}
@@ -345,8 +352,11 @@ void ItemManager::OnItemClassified() {
 	//Check if item is a map, fragment or scarab used with a map
 	MapManager::GetInstance().ClassifyInput(lastParsedItem);
 
-	//Parse only if map is opened
-	if (SessionData::GetInstance().GetIsFirstMapOpened())
+	//Parse only if map is opened or if no condition is enabled
+	if (Settings::GetInstance().GetIsParseAll()) {
+		SessionData::GetInstance().AddProfit(lastParsedItem);
+	}
+	else if (SessionData::GetInstance().GetIsFirstMapOpened())
 		SessionData::GetInstance().AddProfit(lastParsedItem);
 }
 

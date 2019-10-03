@@ -21,7 +21,7 @@ public:
 	void SubtractSpentOnMap();
 	void OnDataChanged();
 	void ResetData();
-	void AddSpentManual(const float& value);
+	void AddSpentManual(const std::pair<std::wstring, bool>& data);
 	void AddProfitManual(const float& value);
 	void LoadSessionData();
 	void SaveSessionData();

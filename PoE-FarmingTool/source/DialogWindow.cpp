@@ -20,6 +20,8 @@ HWND DialogWindow::setZanaModPrice = NULL;
 HWND DialogWindow::logLoc = NULL;
 HWND DialogWindow::comboBoxWnd = NULL;
 HWND DialogWindow::trashCheckbox = NULL;
+HWND DialogWindow::subtractProfitCheckbox = NULL;
+HWND DialogWindow::parseAllCheckbox = NULL;
 HWND DialogWindow::updateButton = NULL;
 
 //global styles
@@ -29,7 +31,7 @@ DWORD dwStyleButton = WS_CHILD | WS_VISIBLE | ES_CENTER | BS_FLAT | BS_TEXT;
 void DialogWindow::OpenMapDialog(HWND hWnd) {
 	RECT rect;
 	GetWindowRect(hWnd, &rect); //Parent window
-	HWND hDlg = CreateWindowEx(NULL, L"myDialogClass", L"Set Map", WS_BORDER | WS_VISIBLE | WS_OVERLAPPEDWINDOW, rect.left + 25, rect.top + 25, 260, 280, NULL, NULL, NULL, NULL);
+	HWND hDlg = CreateWindowEx(NULL, L"myDialogClass", L"Set Map", WS_BORDER | WS_VISIBLE | WS_OVERLAPPEDWINDOW, rect.left + 25, rect.top + 25, 260, 290, NULL, NULL, NULL, NULL);
 	CreateWindow(L"Static", L"Enter name of the map:", dwStyleText, 20, 10, 200, 20, hDlg, NULL, NULL, NULL);
 	setMapWnd = CreateWindow(L"Edit", Settings::GetInstance().GetMapName().c_str(), WS_CHILD | WS_VISIBLE | ES_CENTER | WS_BORDER, 20, 35, 200, 20, hDlg, NULL, NULL, NULL);
 	CreateWindow(L"Static", L"(If price is set to 0 use online price.)", WS_CHILD | WS_VISIBLE, 20, 60, 200, 20, hDlg, NULL, NULL, NULL);
@@ -41,8 +43,10 @@ void DialogWindow::OpenMapDialog(HWND hWnd) {
 	generalCheckbox = CreateWindow(L"BUTTON", NULL, WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 150, 135, 20, 20, hDlg, (HMENU)DIALOG_WINDOW_CHECKBOX_GENERAL, NULL, NULL);
 	CreateWindow(L"Static", L"Ignore trash?", WS_CHILD | WS_VISIBLE, 20, 150, 130, 18, hDlg, NULL, NULL, NULL);
 	trashCheckbox = CreateWindow(L"BUTTON", NULL, WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 150, 150, 20, 20, hDlg, (HMENU)DIALOG_WINDOW_CHECKBOX_TRASH, NULL, NULL);
-	CreateWindow(L"Button", L"Confirm", dwStyleButton, 40, 190, 70, 30, hDlg, (HMENU)DIALOG_WINDOW_SAVE_MAP, NULL, NULL);
-	CreateWindow(L"Button", L"Cancel", dwStyleButton, 130, 190, 70, 30, hDlg, (HMENU)DIALOG_WINDOW_CANCEL, NULL, NULL);
+	CreateWindow(L"Static", L"Calculate everything?", WS_CHILD | WS_VISIBLE, 20, 165, 130, 18, hDlg, NULL, NULL, NULL);
+	parseAllCheckbox = CreateWindow(L"BUTTON", NULL, WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 150, 165, 20, 20, hDlg, (HMENU)DIALOG_WINDOW_CHECKBOX_PARSE_ALL, NULL, NULL);
+	CreateWindow(L"Button", L"Confirm", dwStyleButton, 40, 200, 70, 30, hDlg, (HMENU)DIALOG_WINDOW_SAVE_MAP, NULL, NULL);
+	CreateWindow(L"Button", L"Cancel", dwStyleButton, 130, 200, 70, 30, hDlg, (HMENU)DIALOG_WINDOW_CANCEL, NULL, NULL);
 
 	if (Settings::GetInstance().GetIsTrash()) {
 		SendMessage(trashCheckbox, BM_SETCHECK, BST_CHECKED, 0);
@@ -53,6 +57,10 @@ void DialogWindow::OpenMapDialog(HWND hWnd) {
 		SetWindowText(setMapWnd, L"General");
 		EnableWindow(setMapWnd, false);
 		EnableWindow(setMapPriceWnd, false);
+	}
+
+	if (Settings::GetInstance().GetIsParseAll()) {
+		SendMessage(parseAllCheckbox, BM_SETCHECK, BST_CHECKED, 0);
 	}
 }
 
@@ -151,6 +159,14 @@ MapSettings DialogWindow::GetMapSettings(const HWND& hWnd){
 		mapSettings.isTrash = false;
 	}
 
+	//Check status of checkbox for parsing without conditions, parse always
+	if (IsDlgButtonChecked(hWnd, DIALOG_WINDOW_CHECKBOX_PARSE_ALL)) {
+		mapSettings.isParseAll = true;
+	}
+	else {
+		mapSettings.isParseAll = false;
+	}
+
 	return mapSettings;
 }
 
@@ -190,16 +206,15 @@ void DialogWindow::OnGeneralCheckboxChecked(const HWND& hWnd){
 	}
 }
 
-float DialogWindow::GetSpentValue(){
+std::pair<std::wstring, bool> DialogWindow::GetAddSpentWindowValues(HWND hWnd){
 	wchar_t wSpent[20];
 	GetWindowText(plusSpentWnd, wSpent, (sizeof(wSpent) / 2));
 
-	std::wstring spent = Utilities::WchartToString(wSpent);
+	bool status = false;
+	if (IsDlgButtonChecked(hWnd, DIALOG_WINDOW_CHECKBOX_SUBTRACT_PROFIT))
+		status = true;
 
-	if (!Utilities::CheckDigits(spent))
-		return 0.0f;
-
-	return stof(spent);
+	return std::pair<std::wstring, bool> {Utilities::WchartToString(wSpent), status};
 }
 
 float DialogWindow::GetProfitValue(){
@@ -254,6 +269,8 @@ void DialogWindow::OpenPlusSpentDialog(HWND hWnd) {
 	HWND hDlg = CreateWindowEx(NULL, L"myDialogClass", L"+Spent", WS_BORDER | WS_VISIBLE, rect.left + 25, rect.top + 25, 260, 180, NULL, NULL, NULL, NULL);
 	CreateWindow(L"Static", L"Add value to spent(+/-):", dwStyleText, 20, 10, 200, 20, hDlg, NULL, NULL, NULL);
 	plusSpentWnd = CreateWindow(L"Edit", L"0.00", WS_CHILD | WS_VISIBLE | ES_CENTER | WS_BORDER, 20, 35, 200, 20, hDlg, NULL, NULL, NULL);
+	CreateWindow(L"Static", L"Subtract from profit?", dwStyleText, 0, 60, 200, 20, hDlg, NULL, NULL, NULL);
+	subtractProfitCheckbox = CreateWindow(L"BUTTON", NULL, WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 175, 60, 20, 20, hDlg, (HMENU)DIALOG_WINDOW_CHECKBOX_SUBTRACT_PROFIT, NULL, NULL);
 	CreateWindow(L"Button", L"Confirm", dwStyleButton, 40, 90, 70, 30, hDlg, (HMENU)DIALOG_WINDOW_PLUS_SPENT, NULL, NULL);
 	CreateWindow(L"Button", L"Cancel", dwStyleButton, 130, 90, 70, 30, hDlg, (HMENU)DIALOG_WINDOW_CANCEL, NULL, NULL);
 }
