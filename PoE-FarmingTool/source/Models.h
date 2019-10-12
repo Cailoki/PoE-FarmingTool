@@ -22,6 +22,7 @@ public:
 	const int GetStack() const { return stack; }
 	const int GetQuality() const { return quality; }
 	const bool GetCorrupted() const { return isCorrupted; }
+	const bool GetIdentified() const { return isIdentified; }
 	const float GetValue() const { return value; }
 	const std::wstring GetBase() const{ return base; }
 	//Setters
@@ -33,6 +34,7 @@ public:
 	void SetCorrupted(bool corrupted) { isCorrupted = corrupted; }
 	void SetValue(const float& val) { value = val; }
 	void SetBase(const std::wstring& val) { base = val; }
+	void SetIdentified(bool identified) { isIdentified = identified; }
 private:
 	std::wstring rarity = L"Unknown"; //Currency, Normal, Unique...
 	std::wstring type = L"Unknown"; //Map, Scarab, Essence...
@@ -41,5 +43,5 @@ private:
 	float value = 0;
 	int stack = 1;
 	int quality = 0;
-	bool isCorrupted = false;
+	bool isCorrupted = false, isIdentified = true;
 };

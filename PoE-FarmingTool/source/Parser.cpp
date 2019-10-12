@@ -5,18 +5,21 @@
 //Parses data from clipboard and constructs item object
 Item ClipParser::ParseClipboard() {
 	//Empty clipboard
-	if (data.size() == 0)
+	if (data.size() == 0) 
 		return Item();
 
 	Item item; //Item populated during parsing
 	std::wistringstream dataStream{ data };
 	std::wistringstream temp; //Temp for streaming lines
 	std::wstring stringLine, word;
-	
+
 	//First line example -> "Rarity: Currency"
-	dataStream.seekg(8, std::ios_base::cur);
-	std::getline(dataStream, stringLine);
-	item.SetRarity(Utilities::RemoveTrailingChar(stringLine)); //Set rarity for item
+	dataStream >> word; //Consume "Rarity:"
+	if (word == L"Rarity:") {
+		std::getline(dataStream, stringLine);
+		item.SetRarity(Utilities::RemoveTrailingChar(stringLine)); //Set rarity for item
+	}
+	else return Item(); //Clipboard contains data but it is not relevant to item
 
 	//Second line example -> "Orb of Scouring" or "Rotting Shadows"
 	std::getline(dataStream, stringLine);
@@ -33,13 +36,14 @@ Item ClipParser::ParseClipboard() {
 
 	//After first separator, possible lines "Stack Size: 4/30", "Quality: +20%", "Corrupted"
 	while (std::getline(dataStream, stringLine)) {
-		if (stringLine.find(L"Stack") != std::wstring::npos) {
+		if (stringLine.find(L"Stack ") != std::wstring::npos) { // Look for "[Stack ]Size:", not "[Stack]ed"
 			int stack;
 			temp = std::wistringstream(stringLine);
 			temp >> word; //"Stack"
 			temp >> word; //"Size:"
 			temp >> stack;
-			item.SetStack(stack);
+			if (stack != 0) //Never set stack to 0 in case of wrong input
+				item.SetStack(stack);
 		}
 		else if (stringLine.find(L"Quality:") != std::wstring::npos) {
 			temp = std::wistringstream(stringLine); //"Quality: +20%"
@@ -51,7 +55,9 @@ Item ClipParser::ParseClipboard() {
 		else if (stringLine.find(L"Corrupted") != std::wstring::npos) {
 			item.SetCorrupted(true);
 		}
+		else if (stringLine.find(L"Unidentified") != std::wstring::npos) {
+			item.SetIdentified(false);
+		}
 	}
-
 	return item;
 }
